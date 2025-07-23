@@ -16,8 +16,9 @@ pub fn render_markdown_to_terminal(parser: Parser) -> io::Result<()> {
     let mut in_emphasis = false;
     let mut in_heading = false;
     let mut in_code_block = false;
+    let mut in_blockquote = false;
     let mut current_list_number: Option<u64> = None;
-    let mut list_indent_level: usize = 0; // NEW: Track list nesting depth
+    let mut list_indent_level: usize = 0;
 
     for event in parser {
         match event {
@@ -46,14 +47,13 @@ pub fn render_markdown_to_terminal(parser: Parser) -> io::Result<()> {
                         print!("\n{}{}{}```{}\n", ansi_styles::BLUE, ansi_styles::BOLD, ansi_styles::RESET, ansi_styles::CYAN);
                     }
                     Tag::List(start_num) => {
-                        list_indent_level += 1; // Increase indent for nested lists
-                        print!("\n"); // Newline before a list
+                        list_indent_level += 1;
+                        print!("\n");
                         current_list_number = start_num;
                     }
                     Tag::Item => {
-                        // Print current indentation
-                        for _ in 0..list_indent_level -1 { // Adjust for item prefix space
-                            print!("    "); // 4 spaces per indent level
+                        for _ in 0..list_indent_level -1 {
+                            print!("    ");
                         }
                         if let Some(num) = &mut current_list_number {
                             print!("{}. ", num);
@@ -61,6 +61,19 @@ pub fn render_markdown_to_terminal(parser: Parser) -> io::Result<()> {
                         } else {
                             print!("* ");
                         }
+                    }
+                    // FIX: BlockQuote handling - changed to Tag::BlockQuote(_)
+                    Tag::BlockQuote(_) => {
+                        in_blockquote = true;
+                        print!("\n{}{}>{} ", ansi_styles::YELLOW, ansi_styles::BOLD, ansi_styles::RESET);
+                    }
+                    Tag::Link { dest_url, title, .. } => {
+                        // For a simple implementation, we'll print the link text when Event::Text occurs.
+                        // To show the URL after the text, you'd store `dest_url` in a state variable here
+                        // and print it at TagEnd::Link.
+                    }
+                    Tag::FootnoteDefinition(label) => {
+                        // Ignoring for now
                     }
                     _ => {}
                 }
@@ -91,13 +104,21 @@ pub fn render_markdown_to_terminal(parser: Parser) -> io::Result<()> {
                         println!();
                     }
                     TagEnd::List(_) => {
-                        list_indent_level -= 1; // Decrease indent when list ends
-                        current_list_number = None; // This needs to be more robust for nested ordered lists
-                                                    // For deeply nested ordered lists, you'd need a stack of numbers
-                        println!(); // Add a newline after the list
-                    }
-                    TagEnd::Item => { // NEW: Add a newline after each list item ends
+                        list_indent_level -= 1;
+                        current_list_number = None;
                         println!();
+                    }
+                    TagEnd::Item => {
+                        println!();
+                    }
+                    // FIX: BlockQuote handling - changed to TagEnd::BlockQuote(_)
+                    TagEnd::BlockQuote(_) => {
+                        in_blockquote = false;
+                        println!();
+                    }
+                    // FIX: Link handling - changed to TagEnd::Link
+                    TagEnd::Link => {
+                         print!("{}", ansi_styles::RESET); // Just ensure formatting is reset
                     }
                     _ => {}
                 }
@@ -105,6 +126,8 @@ pub fn render_markdown_to_terminal(parser: Parser) -> io::Result<()> {
             Event::Text(text) => {
                 if in_code_block {
                     print!("{}{}{}", ansi_styles::YELLOW, text, ansi_styles::RESET);
+                } else if in_blockquote {
+                    print!("{}{}", ansi_styles::GREEN, text);
                 } else {
                     print!("{}", text);
                 }
@@ -114,6 +137,27 @@ pub fn render_markdown_to_terminal(parser: Parser) -> io::Result<()> {
             }
             Event::SoftBreak => print!(" "),
             Event::HardBreak => println!(),
+            Event::Rule => {
+                println!("\n{}{}----------------------------------------{}{}",
+                    ansi_styles::BLUE, ansi_styles::BOLD, ansi_styles::RESET, ansi_styles::RESET);
+                println!();
+            }
+            Event::Html(html) => {
+                // Skipping HTML for now
+            }
+            Event::FootnoteReference(label) => {
+                // Ignoring footnote references for now.
+            }
+            Event::TaskListMarker(checked) => {
+                if checked {
+                    print!("[x] ");
+                } else {
+                    print!("[ ] ");
+                }
+            }
+            Event::InlineHtml(html) => {
+                // Skipping inline HTML
+            }
             _ => {}
         }
         io::stdout().flush()?;
