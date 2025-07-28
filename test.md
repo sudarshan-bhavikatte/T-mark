@@ -1,6 +1,6 @@
 # My Awesome Document
 
-This is a paragraph.
+This is a paragraphs.
 
 > This is a blockquote.
 > It can span multiple lines.
@@ -37,3 +37,17 @@ Another line after a link.
 
 - [ ] A task not yet completed
 - [x] A completed task
+
+
+# My Markdown Viewer
+
+## Features
+
+- Bold headers
+- Underlined subheaders
+- Table rendering
+
+| Name  | Age | City     |
+|-------|-----|----------|
+| Alice | 24  | New York |
+| Bob   | 30  | London   |

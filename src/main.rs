@@ -1,28 +1,18 @@
-// src/main.rs
+mod ansi_styles;
+mod renderer;
 
-use std::{env, fs, io::{self, Read}};
-use pulldown_cmark::Parser;
-mod renderer; // Declare the renderer module
-mod ansi_styles; // Declare the ansi_styles module
+use std::{env, fs};
 
-fn main() -> io::Result<()> {
+fn main() {
     let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2 {
-        eprintln!("Usage: {} <markdown_file_path>", args[0]);
+    if args.len() != 2 {
+        eprintln!("Usage: mdview <markdown_file>");
         std::process::exit(1);
     }
 
-    let file_path = &args[1];
+    let filename = &args[1];
+    let contents = fs::read_to_string(filename)
+        .expect("Failed to read file");
 
-    let mut file = fs::File::open(file_path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
-
-    let parser = Parser::new(&content);
-
-    // Call our new rendering function
-    renderer::render_markdown_to_terminal(parser)?;
-
-    Ok(())
+    renderer::render_markdown(&contents);
 }

@@ -18,7 +18,7 @@ pub const MAGENTA: &str = "\x1B[35m";
 pub const CYAN: &str = "\x1B[36m";
 pub const WHITE: &str = "\x1B[37m";
 
-// Background colors (less common for a viewer, but good to have)
+// Background colors
 pub const BG_BLACK: &str = "\x1B[40m";
 pub const BG_RED: &str = "\x1B[41m";
 pub const BG_GREEN: &str = "\x1B[42m";
